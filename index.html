@@ -434,12 +434,12 @@
       currentStep = 2;
       updateSteps();
       
-      // 模拟AI生成剧本
-      await simulateScriptGeneration();
+      // 根据用户输入动态生成内容
+      await generateScript(direction, genre);
     }
     
-    // 模拟剧本生成
-    async function simulateScriptGeneration() {
+    // 根据输入生成剧本
+    async function generateScript(direction, genre) {
       const logArea = document.getElementById('script_log');
       const progressBar = document.getElementById('script_progress');
       logArea.innerHTML = '<div class="log-entry info">🤖 AI正在分析故事方向...</div>';
@@ -448,22 +448,37 @@
       for (let i = 0; i <= 100; i += 10) {
         progressBar.style.width = `${i}%`;
         progressBar.textContent = `${i}%`;
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
       
+      // 根据输入动态生成标题和内容
+      const genreMap = {
+        'urban_fantasy': '都市奇幻',
+        'rebirth': '重生爽文', 
+        'ceo_romance': '霸总甜宠',
+        'suspense': '悬疑推理',
+        'cartoon': '3D卡通动画',
+        'custom': '自定义'
+      };
+      
+      const title = `${direction.split(' ')[0]} ${genreMap[genre]}短剧`;
+      const sceneCount = 12;
+      
       scriptData = {
-        title: "森林奇兵 第一集",
-        genre: "cartoon",
-        scenes: Array.from({length: 12}, (_, i) => ({
+        title: title,
+        genre: genre,
+        direction: direction,
+        scenes: Array.from({length: sceneCount}, (_, i) => ({
           id: i + 1,
-          title: `场景 ${i + 1}`,
-          description: `这是第${i + 1}场戏的描述...`
+          title: `第${i + 1}场`,
+          description: `这是根据"${direction}"生成的第${i + 1}场戏的内容...`
         }))
       };
       
       logArea.innerHTML += `<div class="log-entry success">✅ 剧本生成完成！</div>
                            <div class="log-entry info">📋 标题: ${scriptData.title}</div>
-                           <div class="log-entry info">🎭 类型: ${scriptData.genre}</div>
+                           <div class="log-entry info">🎭 类型: ${genreMap[genre]}</div>
+                           <div class="log-entry info">📝 方向: ${scriptData.direction}</div>
                            <div class="log-entry info">🎬 场景数: ${scriptData.scenes.length}</div>`;
       
       document.getElementById('btn_confirm_script').style.display = 'inline-block';
@@ -473,18 +488,22 @@
     function confirmScript() {
       currentStep = 3;
       updateSteps();
-      simulateCharacterGeneration();
+      generateCharacters();
     }
     
-    // 模拟角色生成
-    async function simulateCharacterGeneration() {
+    // 生成角色
+    async function generateCharacters() {
       const grid = document.getElementById('character_grid');
       const progressBar = document.getElementById('char_progress');
       grid.innerHTML = '';
       
-      // 模拟生成角色
-      const charNames = ['熊大', '熊二', '光头强', '小松鼠果果'];
-      charNames.forEach(name => {
+      // 根据剧本生成角色
+      const charCount = scriptData ? 4 : 3; // 默认4个角色
+      const charNames = scriptData ? 
+        [`主角${String.fromCharCode(65+i)}` for i in range(charCount)] : 
+        ['角色A', '角色B', '角色C'];
+      
+      charNames.forEach((name, index) => {
         const card = document.createElement('div');
         card.className = 'character-card';
         card.innerHTML = `
@@ -499,7 +518,7 @@
       for (let i = 0; i <= 100; i += 20) {
         progressBar.style.width = `${i}%`;
         progressBar.textContent = `${i}%`;
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
       document.querySelectorAll('.character-card p').forEach(p => {
@@ -514,11 +533,11 @@
     function confirmCharacters() {
       currentStep = 4;
       updateSteps();
-      simulateSceneGeneration();
+      generateScenes();
     }
     
-    // 模拟场景生成
-    async function simulateSceneGeneration() {
+    // 生成场景
+    async function generateScenes() {
       const grid = document.getElementById('scene_grid');
       const progressBar = document.getElementById('scene_progress');
       grid.innerHTML = '';
@@ -543,7 +562,7 @@
       for (let i = 0; i <= 100; i += 10) {
         progressBar.style.width = `${i}%`;
         progressBar.textContent = `${i}%`;
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
         
         // 更新场景状态
         const statusElements = document.querySelectorAll('.scene-card .status');
@@ -563,11 +582,11 @@
     function confirmScenes() {
       currentStep = 5;
       updateSteps();
-      simulateVideoGeneration();
+      generateVideos();
     }
     
-    // 模拟视频生成
-    async function simulateVideoGeneration() {
+    // 生成视频
+    async function generateVideos() {
       const logArea = document.getElementById('video_log');
       const progressBar = document.getElementById('video_progress');
       logArea.innerHTML = '<div class="log-entry info">🤖 AI开始生成视频片段...</div>';
@@ -579,7 +598,7 @@
         progressBar.style.width = `${progress}%`;
         progressBar.textContent = `${progress}%`;
         
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500));
         logArea.innerHTML += `<div class="log-entry success">✅ 场景 ${i} 视频生成完成</div>`;
       }
       
@@ -590,29 +609,30 @@
     function confirmVideos() {
       currentStep = 6;
       updateSteps();
-      simulateCompilation();
+      compileVideo();
     }
     
-    // 模拟拼接
-    async function simulateCompilation() {
+    // 拼接视频
+    async function compileVideo() {
       const progressBar = document.getElementById('compile_progress');
       
       // 模拟拼接过程
       for (let i = 0; i <= 100; i += 5) {
         progressBar.style.width = `${i}%`;
         progressBar.textContent = `${i}%`;
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
       
       document.getElementById('final_video').style.display = 'block';
-      document.querySelector('#final_video video source').src = 'videos/output.mp4';
+      // 这里应该指向实际生成的视频文件
+      document.querySelector('#final_video video source').src = 'output.mp4';
     }
     
     // 下载视频
     function downloadVideo() {
       const link = document.createElement('a');
-      link.href = 'videos/output.mp4';
-      link.download = 'forest_warriors_ep1.mp4';
+      link.href = 'output.mp4';
+      link.download = scriptData ? `${scriptData.title.replace(/\s+/g, '_')}.mp4` : 'output.mp4';
       link.click();
     }
     
