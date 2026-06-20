@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>东哥短剧生成器</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: #fff;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      padding: 30px 0;
+    }
+    header h1 {
+      font-size: 2.2em;
+      background: linear-gradient(90deg, #f093fb, #f5576c, #4facfe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    header p {
+      color: #aaa;
+      font-size: 1em;
+    }
+    
+    /* 步骤指示器 */
+    .steps {
+      display: flex;
+      justify-content: space-between;
+      margin: 30px 0;
+      position: relative;
+    }
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: rgba(255,255,255,0.1);
+      z-index: 0;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+    .step-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    .step.active .step-circle {
+      background: linear-gradient(135deg, #f093fb, #f5576c);
+      box-shadow: 0 0 20px rgba(245, 87, 108, 0.5);
+    }
+    .step.completed .step-circle {
+      background: #4CAF50;
+    }
+    .step-label {
+      font-size: 0.85em;
+      color: #aaa;
+    }
+    .step.active .step-label {
+      color: #fff;
+    }
+    
+    /* 内容区域 */
+    .section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      display: none;
+    }
+    .section.active {
+      display: block;
+    }
+    .section h2 {
+      font-size: 1.4em;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    /* 表单元素 */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.2);
+      color: #fff;
+      font-size: 1em;
+    }
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #f5576c;
+    }
+    
+    /* 按钮 */
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #f093fb, #f5576c);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    
+    /* 进度条 */
+    .progress-container {
+      margin: 20px 0;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 20px;
+      background: linear-gradient(90deg, #f093fb, #f5576c);
+      width: 0%;
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8em;
+    }
+    
+    /* 角色卡片 */
+    .character-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .character-card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .character-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .character-card h3 {
+      margin-bottom: 8px;
+    }
+    .character-card p {
+      color: #aaa;
+      font-size: 0.9em;
+    }
+    
+    /* 场景网格 */
+    .scene-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .scene-card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+    .scene-card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+    }
+    .scene-card .info {
+      padding: 12px;
+    }
+    .scene-card .status {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.7);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75em;
+    }
+    .scene-card .status.pending { color: #ff9800; }
+    .scene-card .status.complete { color: #4CAF50; }
+    
+    /* 日志区域 */
+    .log-area {
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+    .log-entry {
+      margin-bottom: 4px;
+    }
+    .log-entry.info { color: #2196F3; }
+    .log-entry.success { color: #4CAF50; }
+    .log-entry.error { color: #f44336; }
+    .log-entry.warning { color: #ff9800; }
+    
+    /* 响应式 */
+    @media (max-width: 768px) {
+      header h1 { font-size: 1.6em; }
+      .steps { flex-wrap: wrap; gap: 10px; }
+      .step { flex: 1; min-width: 60px; }
+      .character-grid, .scene-grid { grid-template-columns: 1fr; }
+      .btn { width: 100%; margin-right: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎬 东哥短剧生成器</h1>
+      <p>AI 驱动的短剧全流程生成工具</p>
+    </header>
+
+    <!-- 步骤指示器 -->
+    <div class="steps">
+      <div class="step active" data-step="1">
+        <div class="step-circle">1</div>
+        <div class="step-label">剧本</div>
+      </div>
+      <div class="step" data-step="2">
+        <div class="step-circle">2</div>
+        <div class="step-label">角色</div>
+      </div>
+      <div class="step" data-step="3">
+        <div class="step-circle">3</div>
+        <div class="step-label">场景</div>
+      </div>
+      <div class="step" data-step="4">
+        <div class="step-circle">4</div>
+        <div class="step-label">视频</div>
+      </div>
+      <div class="step" data-step="5">
+        <div class="step-circle">5</div>
+        <div class="step-label">成片</div>
+      </div>
+    </div>
+
+    <!-- Step 1: 剧本生成 -->
+    <section id="step1" class="section active">
+      <h2>📝 Step 1: 剧本生成</h2>
+      <div class="form-group">
+        <label>题材类型</label>
+        <select id="genre">
+          <option value="urban_fantasy">都市奇幻</option>
+          <option value="rebirth">重生爽文</option>
+          <option value="ceo_romance">霸总甜宠</option>
+          <option value="suspense">悬疑推理</option>
+          <option value="cartoon" selected>3D卡通动画</option>
+          <option value="custom">自定义</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>故事概要</label>
+        <textarea id="story_outline" placeholder="简要描述你的故事..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>角色设定</label>
+        <textarea id="characters_input" placeholder="描述主要角色（每行一个角色）&#10;例如：&#10;熊大 - 森林守护者队长，聪明勇敢&#10;熊二 - 憨厚贪吃，口头禅哎呀妈呀"></textarea>
+      </div>
+      <div class="form-group">
+        <label>场景数量</label>
+        <input type="number" id="scene_count" value="12" min="1" max="20">
+      </div>
+      <button class="btn btn-primary" onclick="generateScript()">生成剧本</button>
+      
+      <div id="script_result" style="margin-top: 20px; display: none;">
+        <h3>生成的剧本：</h3>
+        <div class="log-area" id="script_log"></div>
+        <button class="btn btn-secondary" onclick="nextStep()">确认并继续</button>
+      </div>
+    </section>
+
+    <!-- Step 2: 角色设定 -->
+    <section id="step2" class="section">
+      <h2>🎭 Step 2: 角色设定</h2>
+      <p>为每个角色生成设定图</p>
+      <div class="character-grid" id="character_grid">
+        <!-- 动态生成角色卡片 -->
+      </div>
+      <button class="btn btn-primary" onclick="generateCharacters()" id="btn_generate_chars">生成角色设定</button>
+      <button class="btn btn-secondary" onclick="nextStep()" id="btn_next_chars" style="display: none;">确认并继续</button>
+    </section>
+
+    <!-- Step 3: 场景图 -->
+    <section id="step3" class="section">
+      <h2>🎨 Step 3: 场景图生成</h2>
+      <p>为每场戏生成场景参考图</p>
+      <div class="scene-grid" id="scene_grid">
+        <!-- 动态生成场景卡片 -->
+      </div>
+      <button class="btn btn-primary" onclick="generateScenes()" id="btn_generate_scenes">生成场景图</button>
+      <button class="btn btn-secondary" onclick="nextStep()" id="btn_next_scenes" style="display: none;">确认并继续</button>
+    </section>
+
+    <!-- Step 4: 视频生成 -->
+    <section id="step4" class="section">
+      <h2>🎥 Step 4: 视频片段生成</h2>
+      <p>为每个场景生成视频片段（每个约3-5分钟）</p>
+      <div class="progress-container">
+        <div class="progress-bar" id="video_progress">0%</div>
+      </div>
+      <button class="btn btn-primary" onclick="generateVideos()" id="btn_generate_videos">开始生成视频</button>
+      <button class="btn btn-secondary" onclick="nextStep()" id="btn_next_videos" style="display: none;">确认并继续</button>
+      <div class="log-area" id="video_log"></div>
+    </section>
+
+    <!-- Step 5: 成片 -->
+    <section id="step5" class="section">
+      <h2>🎞️ Step 5: 拼接成片</h2>
+      <p>将所有视频片段拼接成最终成品</p>
+      <button class="btn btn-primary" onclick="compileVideo()" id="btn_compile">拼接成片</button>
+      <div class="progress-container">
+        <div class="progress-bar" id="compile_progress">0%</div>
+      </div>
+      <div id="final_video" style="margin-top: 20px; display: none;">
+        <h3>最终成片：</h3>
+        <video controls style="width: 100%; max-width: 800px; margin: 0 auto; display: block;">
+          <source src="" type="video/mp4">
+          您的浏览器不支持视频播放
+        </video>
+        <button class="btn btn-secondary" onclick="downloadVideo()">下载视频</button>
+      </div>
+    </section>
+
+    <footer style="text-align: center; padding: 30px 0; color: #666; font-size: 0.85em;">
+      <p>东哥短剧生成器 © 2026 | 由 Agnes AI + Hermes Agent 驱动</p>
+    </footer>
+  </div>
+
+  <script>
+    // 全局状态
+    let currentStep = 1;
+    let scriptData = null;
+    let characters = [];
+    let scenes = [];
+    let videos = [];
+    
+    // 步骤导航
+    function updateSteps() {
+      document.querySelectorAll('.step').forEach((el, i) => {
+        el.classList.remove('active', 'completed');
+        if (i + 1 < currentStep) el.classList.add('completed');
+        if (i + 1 === currentStep) el.classList.add('active');
+      });
+      
+      document.querySelectorAll('.section').forEach((el, i) => {
+        el.classList.remove('active');
+        if (i + 1 === currentStep) el.classList.add('active');
+      });
+    }
+    
+    function nextStep() {
+      if (currentStep < 5) {
+        currentStep++;
+        updateSteps();
+      }
+    }
+    
+    // Step 1: 生成剧本
+    async function generateScript() {
+      const genre = document.getElementById('genre').value;
+      const outline = document.getElementById('story_outline').value;
+      const charactersInput = document.getElementById('characters_input').value;
+      const sceneCount = parseInt(document.getElementById('scene_count').value);
+      
+      if (!outline || !charactersInput) {
+        alert('请填写故事概要和角色设定');
+        return;
+      }
+      
+      const logArea = document.getElementById('script_log');
+      logArea.innerHTML = '<div class="log-entry info">正在生成剧本...</div>';
+      
+      // 模拟API调用（实际使用时替换为真实API）
+      try {
+        // 这里应该调用Agnes AI API生成剧本
+        // 暂时使用模拟数据
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        scriptData = {
+          title: "森林奇兵 第一集",
+          genre: genre,
+          scenes: Array.from({length: sceneCount}, (_, i) => ({
+            id: i + 1,
+            title: `场景 ${i + 1}`,
+            description: `这是第${i + 1}场戏的描述...`
+          }))
+        };
+        
+        logArea.innerHTML = `<div class="log-entry success">✅ 剧本生成完成！</div>
+                            <div class="log-entry info">📋 标题: ${scriptData.title}</div>
+                            <div class="log-entry info">🎭 类型: ${genre}</div>
+                            <div class="log-entry info">🎬 场景数: ${scriptData.scenes.length}</div>`;
+        
+        document.getElementById('script_result').style.display = 'block';
+      } catch (error) {
+        logArea.innerHTML = `<div class="log-entry error">❌ 生成失败: ${error.message}</div>`;
+      }
+    }
+    
+    // Step 2: 生成角色设定
+    function generateCharacters() {
+      const grid = document.getElementById('character_grid');
+      grid.innerHTML = '';
+      
+      // 模拟生成角色
+      const charNames = ['熊大', '熊二', '光头强', '小松鼠果果'];
+      charNames.forEach(name => {
+        const card = document.createElement('div');
+        card.className = 'character-card';
+        card.innerHTML = `
+          <img src="https://via.placeholder.com/300x200/5C3317/fff?text=${encodeURIComponent(name)}" alt="${name}">
+          <h3>${name}</h3>
+          <p>角色设定图生成中...</p>
+        `;
+        grid.appendChild(card);
+      });
+      
+      document.getElementById('btn_generate_chars').disabled = true;
+      
+      // 模拟生成完成
+      setTimeout(() => {
+        document.getElementById('btn_next_chars').style.display = 'inline-block';
+        document.querySelectorAll('.character-card p').forEach(p => {
+          p.textContent = '✅ 角色设定已完成';
+          p.style.color = '#4CAF50';
+        });
+      }, 3000);
+    }
+    
+    // Step 3: 生成场景图
+    function generateScenes() {
+      const grid = document.getElementById('scene_grid');
+      grid.innerHTML = '';
+      
+      if (!scriptData) return;
+      
+      scriptData.scenes.forEach(scene => {
+        const card = document.createElement('div');
+        card.className = 'scene-card';
+        card.innerHTML = `
+          <div class="status pending">待生成</div>
+          <img src="https://via.placeholder.com/300x150/228B22/fff?text=Scene+${scene.id}" alt="场景${scene.id}">
+          <div class="info">
+            <strong>场景 ${scene.id}</strong>
+            <p>${scene.title}</p>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      
+      document.getElementById('btn_generate_scenes').disabled = true;
+      
+      // 模拟生成完成
+      setTimeout(() => {
+        document.querySelectorAll('.scene-card .status').forEach(status => {
+          status.textContent = '✅ 完成';
+          status.className = 'status complete';
+        });
+        document.getElementById('btn_next_scenes').style.display = 'inline-block';
+      }, 5000);
+    }
+    
+    // Step 4: 生成视频
+    async function generateVideos() {
+      const logArea = document.getElementById('video_log');
+      const progressBar = document.getElementById('video_progress');
+      logArea.innerHTML = '<div class="log-entry info">开始生成视频片段...</div>';
+      
+      // 模拟视频生成过程
+      for (let i = 1; i <= 12; i++) {
+        logArea.innerHTML += `<div class="log-entry info">生成场景 ${i} 的视频...</div>`;
+        const progress = Math.round((i / 12) * 100);
+        progressBar.style.width = `${progress}%`;
+        progressBar.textContent = `${progress}%`;
+        
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        logArea.innerHTML += `<div class="log-entry success">✅ 场景 ${i} 视频生成完成</div>`;
+      }
+      
+      document.getElementById('btn_next_videos').style.display = 'inline-block';
+    }
+    
+    // Step 5: 拼接成片
+    async function compileVideo() {
+      const progressBar = document.getElementById('compile_progress');
+      progressBar.style.width = '0%';
+      progressBar.textContent = '0%';
+      
+      // 模拟拼接过程
+      for (let i = 0; i <= 100; i += 5) {
+        progressBar.style.width = `${i}%`;
+        progressBar.textContent = `${i}%`;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      document.getElementById('final_video').style.display = 'block';
+      document.querySelector('#final_video video source').src = 'videos/output.mp4';
+    }
+    
+    function downloadVideo() {
+      const link = document.createElement('a');
+      link.href = 'videos/output.mp4';
+      link.download = 'forest_warriors_ep1.mp4';
+      link.click();
+    }
+    
+    // 初始化
+    updateSteps();
+  </script>
+</body>
+</html>
