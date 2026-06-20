@@ -473,6 +473,13 @@
       grid.innerHTML = '';
       
       try {
+        // 显示进度
+        for (let i = 0; i <= 100; i += 10) {
+          progressBar.style.width = `${i}%`;
+          progressBar.textContent = `${i}%`;
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
         const response = await fetch(`${API_BASE}/api/generate-characters`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -484,10 +491,12 @@
           charactersData = data.characters;
           displayCharacters(charactersData);
           document.getElementById('btn_confirm_chars').style.display = 'inline-block';
+        } else {
+          alert('生成角色失败: ' + (data.error || '未知错误'));
         }
       } catch (error) {
         console.error('生成角色失败:', error);
-        alert('生成角色失败');
+        alert('生成角色失败，请检查后端服务');
       }
     }
     
