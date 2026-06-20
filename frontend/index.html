@@ -152,10 +152,43 @@
       line-height: 1.5;
     }
     
+    /* 剧本展示 */
+    .script-display {
+      margin-top: 20px;
+    }
+    .script-display h3 {
+      margin-bottom: 16px;
+      color: #f5576c;
+    }
+    .scene-item {
+      background: rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .scene-item h4 {
+      color: #4facfe;
+      margin-bottom: 8px;
+    }
+    .scene-item p {
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+    .dialogue-item {
+      padding: 8px;
+      margin: 4px 0;
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px;
+    }
+    .dialogue-item .character {
+      color: #f093fb;
+      font-weight: bold;
+    }
+    
     /* 角色卡片 */
     .character-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 20px;
       margin-top: 20px;
     }
@@ -167,16 +200,25 @@
     }
     .character-card img {
       width: 100%;
-      height: 200px;
+      height: 280px;
       object-fit: cover;
       border-radius: 8px;
       margin-bottom: 12px;
+    }
+    .character-card h3 {
+      margin-bottom: 8px;
+      color: #f093fb;
+    }
+    .character-card p {
+      font-size: 0.9em;
+      line-height: 1.5;
+      margin-bottom: 8px;
     }
     
     /* 场景网格 */
     .scene-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 16px;
       margin-top: 20px;
     }
@@ -187,9 +229,40 @@
     }
     .scene-card img {
       width: 100%;
-      height: 120px;
+      height: 180px;
       object-fit: cover;
     }
+    .scene-card .info {
+      padding: 12px;
+    }
+    .scene-card h4 {
+      color: #4facfe;
+      margin-bottom: 8px;
+    }
+    .scene-card p {
+      font-size: 0.85em;
+      line-height: 1.5;
+      color: #ccc;
+    }
+    
+    /* 日志 */
+    .log-area {
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+    .log-entry {
+      margin-bottom: 4px;
+    }
+    .log-entry.info { color: #2196F3; }
+    .log-entry.success { color: #4CAF50; }
+    .log-entry.error { color: #f44336; }
     
     /* 响应式 */
     @media (max-width: 768px) {
@@ -261,7 +334,7 @@
       <div class="progress-container">
         <div class="progress-bar" id="script_progress">0%</div>
       </div>
-      <div class="result-area" id="script_result"></div>
+      <div class="script-display" id="script_display"></div>
       <button class="btn btn-secondary" onclick="confirmScript()" id="btn_confirm_script" style="display: none;">确认剧本</button>
     </section>
 
@@ -291,7 +364,7 @@
       <div class="progress-container">
         <div class="progress-bar" id="video_progress">0%</div>
       </div>
-      <div class="result-area" id="video_log"></div>
+      <div class="log-area" id="video_log"></div>
       <button class="btn btn-secondary" onclick="confirmVideos()" id="btn_confirm_videos" style="display: none;">确认视频</button>
     </section>
 
@@ -315,7 +388,9 @@
   <script>
     let currentStep = 1;
     let scriptData = null;
-    const API_BASE = 'http://127.0.0.1:8000'; // 后端服务地址
+    let charactersData = [];
+    let scenesData = [];
+    const API_BASE = 'http://127.0.0.1:8000';
     
     function updateSteps() {
       document.querySelectorAll('.step').forEach((el, i) => {
@@ -352,8 +427,10 @@
         const data = await response.json();
         if (data.success) {
           scriptData = data.script;
-          document.getElementById('script_result').textContent = JSON.stringify(data.script, null, 2);
+          displayScript(scriptData);
           document.getElementById('btn_confirm_script').style.display = 'inline-block';
+        } else {
+          alert('生成失败: ' + data.error);
         }
       } catch (error) {
         console.error('生成剧本失败:', error);
@@ -361,36 +438,129 @@
       }
     }
     
+    function displayScript(script) {
+      const display = document.getElementById('script_display');
+      let html = `<h3>📋 ${script.title}</h3>`;
+      
+      script.scenes.forEach(scene => {
+        html += `
+          <div class="scene-item">
+            <h4>第${scene.id}场：${scene.scene_title}</h4>
+            <p><strong>描述：</strong>${scene.description}</p>
+            <p><strong>镜头：</strong>${scene.camera}</p>
+            <h5>对话：</h5>
+            ${scene.dialogue.map(d => `
+              <div class="dialogue-item">
+                <span class="character">${d.character}：</span>${d.text}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      });
+      
+      display.innerHTML = html;
+    }
+    
     function confirmScript() {
       currentStep = 3;
       updateSteps();
-      // 这里应该调用角色生成API
-      alert('角色生成功能待实现');
+      generateCharacters();
+    }
+    
+    async function generateCharacters() {
+      const progressBar = document.getElementById('char_progress');
+      const grid = document.getElementById('character_grid');
+      grid.innerHTML = '';
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/generate-characters`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ script: scriptData })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          charactersData = data.characters;
+          displayCharacters(charactersData);
+          document.getElementById('btn_confirm_chars').style.display = 'inline-block';
+        }
+      } catch (error) {
+        console.error('生成角色失败:', error);
+        alert('生成角色失败');
+      }
+    }
+    
+    function displayCharacters(characters) {
+      const grid = document.getElementById('character_grid');
+      grid.innerHTML = characters.map(char => `
+        <div class="character-card">
+          ${char.image_url ? `<img src="${char.image_url}" alt="${char.character_name}">` : '<p>图片生成中...</p>'}
+          <h3>${char.character_name}</h3>
+          <p><strong>外貌：</strong>${char.appearance}</p>
+          <p><strong>服装：</strong>${char.clothing}</p>
+          <p><strong>性格：</strong>${char.personality}</p>
+          <p><strong>道具：</strong>${char.props}</p>
+        </div>
+      `).join('');
     }
     
     function confirmCharacters() {
       currentStep = 4;
       updateSteps();
-      // 这里应该调用场景生成API
-      alert('场景生成功能待实现');
+      generateScenes();
+    }
+    
+    async function generateScenes() {
+      const progressBar = document.getElementById('scene_progress');
+      const grid = document.getElementById('scene_grid');
+      grid.innerHTML = '';
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/generate-scenes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ script: scriptData })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          scenesData = data.scenes;
+          displayScenes(scenesData);
+          document.getElementById('btn_confirm_scenes').style.display = 'inline-block';
+        }
+      } catch (error) {
+        console.error('生成场景失败:', error);
+        alert('生成场景失败');
+      }
+    }
+    
+    function displayScenes(scenes) {
+      const grid = document.getElementById('scene_grid');
+      grid.innerHTML = scenes.map(scene => `
+        <div class="scene-card">
+          ${scene.image_url ? `<img src="${scene.image_url}" alt="${scene.scene_title}">` : '<div style="height:180px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;">暂无图片</div>'}
+          <div class="info">
+            <h4>第${scene.id}场：${scene.scene_title}</h4>
+            <p>${scene.description}</p>
+          </div>
+        </div>
+      `).join('');
     }
     
     function confirmScenes() {
       currentStep = 5;
       updateSteps();
-      // 这里应该调用视频生成API
       alert('视频生成功能待实现');
     }
     
     function confirmVideos() {
       currentStep = 6;
       updateSteps();
-      // 这里应该调用视频拼接API
       alert('视频拼接功能待实现');
     }
     
     function downloadVideo() {
-      // 实现视频下载
       alert('视频下载功能待实现');
     }
     
