@@ -12,6 +12,10 @@
 
 ## 使用方法
 
+### 方法1: 直接在浏览器中使用（推荐）
+访问: https://chaoyibot.github.io/dongge-drama-generator/
+
+### 方法2: 本地运行
 1. 启动后端服务：
 ```bash
 cd backend
