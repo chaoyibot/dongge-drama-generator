@@ -500,7 +500,7 @@
       // 根据剧本生成角色
       const charCount = scriptData ? 4 : 3; // 默认4个角色
       const charNames = scriptData ? 
-        [`主角${String.fromCharCode(65+i)}` for i in range(charCount)] : 
+        Array.from({length: charCount}, (_, i) => `主角${String.fromCharCode(65+i)}`) : 
         ['角色A', '角色B', '角色C'];
       
       charNames.forEach((name, index) => {
