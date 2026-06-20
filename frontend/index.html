@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>东哥短剧生成器</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: #fff;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      padding: 30px 0;
+    }
+    header h1 {
+      font-size: 2.2em;
+      background: linear-gradient(90deg, #f093fb, #f5576c, #4facfe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    
+    /* 步骤指示器 */
+    .steps {
+      display: flex;
+      justify-content: space-between;
+      margin: 30px 0;
+    }
+    .step {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      position: relative;
+    }
+    .step::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: -50%;
+      width: 100%;
+      height: 2px;
+      background: rgba(255,255,255,0.1);
+      z-index: -1;
+    }
+    .step:last-child::after { display: none; }
+    .step.active .step-circle {
+      background: linear-gradient(135deg, #f093fb, #f5576c);
+    }
+    .step.completed .step-circle {
+      background: #4CAF50;
+    }
+    .step-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    
+    /* 内容区域 */
+    .section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      display: none;
+    }
+    .section.active { display: block; }
+    
+    /* 表单元素 */
+    .form-group { margin-bottom: 20px; }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.2);
+      color: #fff;
+      font-size: 1em;
+    }
+    .form-group textarea { min-height: 120px; resize: vertical; }
+    
+    /* 按钮 */
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-right: 10px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #f093fb, #f5576c);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    /* 进度条 */
+    .progress-container {
+      margin: 20px 0;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 20px;
+      background: linear-gradient(90deg, #f093fb, #f5576c);
+      width: 0%;
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8em;
+    }
+    
+    /* 结果展示 */
+    .result-area {
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 0.9em;
+      line-height: 1.5;
+    }
+    
+    /* 角色卡片 */
+    .character-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .character-card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .character-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    
+    /* 场景网格 */
+    .scene-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .scene-card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .scene-card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+    }
+    
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .steps { flex-wrap: wrap; }
+      .step { flex: 0 0 calc(33.33% - 10px); margin-bottom: 10px; }
+      .character-grid, .scene-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎬 东哥短剧生成器</h1>
+      <p>AI驱动的全流程短剧生成工具</p>
+    </header>
+
+    <!-- 步骤指示器 -->
+    <div class="steps">
+      <div class="step active" data-step="1">
+        <div class="step-circle">1</div>
+        <div>主题</div>
+      </div>
+      <div class="step" data-step="2">
+        <div class="step-circle">2</div>
+        <div>剧本</div>
+      </div>
+      <div class="step" data-step="3">
+        <div class="step-circle">3</div>
+        <div>角色</div>
+      </div>
+      <div class="step" data-step="4">
+        <div class="step-circle">4</div>
+        <div>场景</div>
+      </div>
+      <div class="step" data-step="5">
+        <div class="step-circle">5</div>
+        <div>视频</div>
+      </div>
+      <div class="step" data-step="6">
+        <div class="step-circle">6</div>
+        <div>成片</div>
+      </div>
+    </div>
+
+    <!-- Step 1: 主题确认 -->
+    <section id="step1" class="section active">
+      <h2>📝 Step 1: 确认主题方向</h2>
+      <div class="form-group">
+        <label>题材类型</label>
+        <select id="genre">
+          <option value="urban_fantasy">都市奇幻</option>
+          <option value="rebirth">重生爽文</option>
+          <option value="ceo_romance">霸总甜宠</option>
+          <option value="suspense">悬疑推理</option>
+          <option value="cartoon" selected>3D卡通动画</option>
+          <option value="custom">自定义</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>故事方向（一句话描述即可）</label>
+        <input type="text" id="story_direction" placeholder="例如：森林里的动物们对抗伐木工的故事">
+      </div>
+      <button class="btn btn-primary" onclick="startGeneration()">开始生成</button>
+    </section>
+
+    <!-- Step 2: 剧本生成 -->
+    <section id="step2" class="section">
+      <h2>📖 Step 2: AI生成剧本</h2>
+      <div class="progress-container">
+        <div class="progress-bar" id="script_progress">0%</div>
+      </div>
+      <div class="result-area" id="script_result"></div>
+      <button class="btn btn-secondary" onclick="confirmScript()" id="btn_confirm_script" style="display: none;">确认剧本</button>
+    </section>
+
+    <!-- Step 3: 角色设定 -->
+    <section id="step3" class="section">
+      <h2>🎭 Step 3: AI生成角色设定</h2>
+      <div class="progress-container">
+        <div class="progress-bar" id="char_progress">0%</div>
+      </div>
+      <div class="character-grid" id="character_grid"></div>
+      <button class="btn btn-secondary" onclick="confirmCharacters()" id="btn_confirm_chars" style="display: none;">确认角色</button>
+    </section>
+
+    <!-- Step 4: 场景图 -->
+    <section id="step4" class="section">
+      <h2>🎨 Step 4: AI生成场景图</h2>
+      <div class="progress-container">
+        <div class="progress-bar" id="scene_progress">0%</div>
+      </div>
+      <div class="scene-grid" id="scene_grid"></div>
+      <button class="btn btn-secondary" onclick="confirmScenes()" id="btn_confirm_scenes" style="display: none;">确认场景</button>
+    </section>
+
+    <!-- Step 5: 视频生成 -->
+    <section id="step5" class="section">
+      <h2>🎥 Step 5: AI生成视频片段</h2>
+      <div class="progress-container">
+        <div class="progress-bar" id="video_progress">0%</div>
+      </div>
+      <div class="result-area" id="video_log"></div>
+      <button class="btn btn-secondary" onclick="confirmVideos()" id="btn_confirm_videos" style="display: none;">确认视频</button>
+    </section>
+
+    <!-- Step 6: 成片 -->
+    <section id="step6" class="section">
+      <h2>🎞️ Step 6: AI拼接成片</h2>
+      <div class="progress-container">
+        <div class="progress-bar" id="compile_progress">0%</div>
+      </div>
+      <div id="final_video" style="margin-top: 20px; display: none;">
+        <h3>最终成片：</h3>
+        <video controls style="width: 100%; max-width: 800px; margin: 0 auto; display: block;">
+          <source src="" type="video/mp4">
+          您的浏览器不支持视频播放
+        </video>
+        <button class="btn btn-primary" onclick="downloadVideo()">下载视频</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    let currentStep = 1;
+    let scriptData = null;
+    const API_BASE = 'http://localhost:8000'; // 后端服务地址
+    
+    function updateSteps() {
+      document.querySelectorAll('.step').forEach((el, i) => {
+        el.classList.remove('active', 'completed');
+        if (i + 1 < currentStep) el.classList.add('completed');
+        if (i + 1 === currentStep) el.classList.add('active');
+      });
+      
+      document.querySelectorAll('.section').forEach((el, i) => {
+        el.classList.remove('active');
+        if (i + 1 === currentStep) el.classList.add('active');
+      });
+    }
+    
+    async function startGeneration() {
+      const genre = document.getElementById('genre').value;
+      const direction = document.getElementById('story_direction').value;
+      
+      if (!direction) {
+        alert('请输入故事方向');
+        return;
+      }
+      
+      currentStep = 2;
+      updateSteps();
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/generate-script`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ direction, genre })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          scriptData = data.script;
+          document.getElementById('script_result').textContent = JSON.stringify(data.script, null, 2);
+          document.getElementById('btn_confirm_script').style.display = 'inline-block';
+        }
+      } catch (error) {
+        console.error('生成剧本失败:', error);
+        alert('生成剧本失败，请检查后端服务是否启动');
+      }
+    }
+    
+    function confirmScript() {
+      currentStep = 3;
+      updateSteps();
+      // 这里应该调用角色生成API
+      alert('角色生成功能待实现');
+    }
+    
+    function confirmCharacters() {
+      currentStep = 4;
+      updateSteps();
+      // 这里应该调用场景生成API
+      alert('场景生成功能待实现');
+    }
+    
+    function confirmScenes() {
+      currentStep = 5;
+      updateSteps();
+      // 这里应该调用视频生成API
+      alert('视频生成功能待实现');
+    }
+    
+    function confirmVideos() {
+      currentStep = 6;
+      updateSteps();
+      // 这里应该调用视频拼接API
+      alert('视频拼接功能待实现');
+    }
+    
+    function downloadVideo() {
+      // 实现视频下载
+      alert('视频下载功能待实现');
+    }
+    
+    // 初始化
+    updateSteps();
+  </script>
+</body>
+</html>
