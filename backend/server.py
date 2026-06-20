@@ -84,13 +84,12 @@ class DramaGeneratorHandler(BaseHTTPRequestHandler):
 要求：
 1. 生成12场戏的完整剧本
 2. 每场戏必须包含：
-   - scene_title: 场景标题（如"翠花林清晨"）
-   - description: 详细的场景描述（100字以上，包含视觉元素、光影、色彩、构图）
-   - dialogue: 角色对话列表，每个对话包含 character（角色名）和 text（台词）
-   - camera: 镜头说明
-3. 风格要幽默搞笑，加入笑点、反差萌、意外转折
-4. 角色要有鲜明的个性特征
-5. 输出必须是严格的JSON格式，不要任何其他文字
+   - scene_title: 场景标题
+   - description: 场景描述（80字以内，简洁有力）
+   - dialogue: 角色对话列表，每个对话包含 character（角色名）和 text（台词，30字以内）
+   - camera: 镜头说明（20字以内）
+3. 风格要幽默搞笑
+4. 输出必须是严格的JSON格式，不要任何其他文字
 
 输出格式示例：
 {{
@@ -100,9 +99,9 @@ class DramaGeneratorHandler(BaseHTTPRequestHandler):
     {{
       "id": 1,
       "scene_title": "场景标题",
-      "description": "详细描述...",
+      "description": "简短描述...",
       "dialogue": [
-        {{"character": "角色名", "text": "台词内容"}}
+        {{"character": "角色名", "text": "简短台词"}}
       ],
       "camera": "镜头说明"
     }}
@@ -261,16 +260,23 @@ class DramaGeneratorHandler(BaseHTTPRequestHandler):
         data = {
             "model": "agnes-image-2.1-flash",
             "prompt": prompt,
-            "size": size,
-            "response_format": "url"
+            "size": size
         }
         
         req = urllib.request.Request(url, json.dumps(data).encode(), headers)
-        with urllib.request.urlopen(req, timeout=180) as response:
-            result = json.loads(response.read())
-            # 提取图片URL
-            if 'data' in result and len(result['data']) > 0:
-                return result['data'][0].get('url', '')
+        try:
+            with urllib.request.urlopen(req, timeout=180) as response:
+                result = json.loads(response.read())
+                # 尝试多种可能的返回格式
+                if 'data' in result and len(result['data']) > 0:
+                    return result['data'][0].get('url', '')
+                elif 'url' in result:
+                    return result['url']
+                elif 'output' in result:
+                    return result['output']
+                return ''
+        except Exception as e:
+            print(f"图片生成错误: {e}")
             return ''
     
     def send_json_response(self, data):
