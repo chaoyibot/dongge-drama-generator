@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>东哥短剧生成器</title>
+  <title>东哥短剧生成器 - AI驱动</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -281,36 +281,41 @@
   <div class="container">
     <header>
       <h1>🎬 东哥短剧生成器</h1>
-      <p>AI 驱动的短剧全流程生成工具</p>
+      <p>只需确定主题，AI自动完成全流程</p>
     </header>
 
     <!-- 步骤指示器 -->
     <div class="steps">
       <div class="step active" data-step="1">
         <div class="step-circle">1</div>
-        <div class="step-label">剧本</div>
+        <div class="step-label">主题</div>
       </div>
       <div class="step" data-step="2">
         <div class="step-circle">2</div>
-        <div class="step-label">角色</div>
+        <div class="step-label">剧本</div>
       </div>
       <div class="step" data-step="3">
         <div class="step-circle">3</div>
-        <div class="step-label">场景</div>
+        <div class="step-label">角色</div>
       </div>
       <div class="step" data-step="4">
         <div class="step-circle">4</div>
-        <div class="step-label">视频</div>
+        <div class="step-label">场景</div>
       </div>
       <div class="step" data-step="5">
         <div class="step-circle">5</div>
+        <div class="step-label">视频</div>
+      </div>
+      <div class="step" data-step="6">
+        <div class="step-circle">6</div>
         <div class="step-label">成片</div>
       </div>
     </div>
 
-    <!-- Step 1: 剧本生成 -->
+    <!-- Step 1: 主题确认 -->
     <section id="step1" class="section active">
-      <h2>📝 Step 1: 剧本生成</h2>
+      <h2>📝 Step 1: 确认主题方向</h2>
+      <p>只需告诉我你想做什么类型的短剧，剩下的交给AI！</p>
       <div class="form-group">
         <label>题材类型</label>
         <select id="genre">
@@ -323,65 +328,59 @@
         </select>
       </div>
       <div class="form-group">
-        <label>故事概要</label>
-        <textarea id="story_outline" placeholder="简要描述你的故事..."></textarea>
+        <label>故事方向（一句话描述即可）</label>
+        <input type="text" id="story_direction" placeholder="例如：森林里的动物们对抗伐木工的故事">
       </div>
-      <div class="form-group">
-        <label>角色设定</label>
-        <textarea id="characters_input" placeholder="描述主要角色（每行一个角色）&#10;例如：&#10;熊大 - 森林守护者队长，聪明勇敢&#10;熊二 - 憨厚贪吃，口头禅哎呀妈呀"></textarea>
-      </div>
-      <div class="form-group">
-        <label>场景数量</label>
-        <input type="number" id="scene_count" value="12" min="1" max="20">
-      </div>
-      <button class="btn btn-primary" onclick="generateScript()">生成剧本</button>
-      
-      <div id="script_result" style="margin-top: 20px; display: none;">
-        <h3>生成的剧本：</h3>
-        <div class="log-area" id="script_log"></div>
-        <button class="btn btn-secondary" onclick="nextStep()">确认并继续</button>
-      </div>
+      <button class="btn btn-primary" onclick="startGeneration()">开始生成</button>
     </section>
 
-    <!-- Step 2: 角色设定 -->
+    <!-- Step 2: 剧本生成 -->
     <section id="step2" class="section">
-      <h2>🎭 Step 2: 角色设定</h2>
-      <p>为每个角色生成设定图</p>
+      <h2>📖 Step 2: AI生成剧本</h2>
+      <div class="progress-container">
+        <div class="progress-bar" id="script_progress">0%</div>
+      </div>
+      <div class="log-area" id="script_log"></div>
+      <button class="btn btn-secondary" onclick="confirmScript()" id="btn_confirm_script" style="display: none;">确认剧本</button>
+    </section>
+
+    <!-- Step 3: 角色设定 -->
+    <section id="step3" class="section">
+      <h2>🎭 Step 3: AI生成角色设定</h2>
+      <div class="progress-container">
+        <div class="progress-bar" id="char_progress">0%</div>
+      </div>
       <div class="character-grid" id="character_grid">
         <!-- 动态生成角色卡片 -->
       </div>
-      <button class="btn btn-primary" onclick="generateCharacters()" id="btn_generate_chars">生成角色设定</button>
-      <button class="btn btn-secondary" onclick="nextStep()" id="btn_next_chars" style="display: none;">确认并继续</button>
+      <button class="btn btn-secondary" onclick="confirmCharacters()" id="btn_confirm_chars" style="display: none;">确认角色</button>
     </section>
 
-    <!-- Step 3: 场景图 -->
-    <section id="step3" class="section">
-      <h2>🎨 Step 3: 场景图生成</h2>
-      <p>为每场戏生成场景参考图</p>
+    <!-- Step 4: 场景图 -->
+    <section id="step4" class="section">
+      <h2>🎨 Step 4: AI生成场景图</h2>
+      <div class="progress-container">
+        <div class="progress-bar" id="scene_progress">0%</div>
+      </div>
       <div class="scene-grid" id="scene_grid">
         <!-- 动态生成场景卡片 -->
       </div>
-      <button class="btn btn-primary" onclick="generateScenes()" id="btn_generate_scenes">生成场景图</button>
-      <button class="btn btn-secondary" onclick="nextStep()" id="btn_next_scenes" style="display: none;">确认并继续</button>
+      <button class="btn btn-secondary" onclick="confirmScenes()" id="btn_confirm_scenes" style="display: none;">确认场景</button>
     </section>
 
-    <!-- Step 4: 视频生成 -->
-    <section id="step4" class="section">
-      <h2>🎥 Step 4: 视频片段生成</h2>
-      <p>为每个场景生成视频片段（每个约3-5分钟）</p>
+    <!-- Step 5: 视频生成 -->
+    <section id="step5" class="section">
+      <h2>🎥 Step 5: AI生成视频片段</h2>
       <div class="progress-container">
         <div class="progress-bar" id="video_progress">0%</div>
       </div>
-      <button class="btn btn-primary" onclick="generateVideos()" id="btn_generate_videos">开始生成视频</button>
-      <button class="btn btn-secondary" onclick="nextStep()" id="btn_next_videos" style="display: none;">确认并继续</button>
       <div class="log-area" id="video_log"></div>
+      <button class="btn btn-secondary" onclick="confirmVideos()" id="btn_confirm_videos" style="display: none;">确认视频</button>
     </section>
 
-    <!-- Step 5: 成片 -->
-    <section id="step5" class="section">
-      <h2>🎞️ Step 5: 拼接成片</h2>
-      <p>将所有视频片段拼接成最终成品</p>
-      <button class="btn btn-primary" onclick="compileVideo()" id="btn_compile">拼接成片</button>
+    <!-- Step 6: 成片 -->
+    <section id="step6" class="section">
+      <h2>🎞️ Step 6: AI拼接成片</h2>
       <div class="progress-container">
         <div class="progress-bar" id="compile_progress">0%</div>
       </div>
@@ -391,7 +390,7 @@
           <source src="" type="video/mp4">
           您的浏览器不支持视频播放
         </video>
-        <button class="btn btn-secondary" onclick="downloadVideo()">下载视频</button>
+        <button class="btn btn-primary" onclick="downloadVideo()">下载视频</button>
       </div>
     </section>
 
@@ -422,58 +421,65 @@
       });
     }
     
-    function nextStep() {
-      if (currentStep < 5) {
-        currentStep++;
-        updateSteps();
-      }
-    }
-    
-    // Step 1: 生成剧本
-    async function generateScript() {
+    // 开始生成
+    async function startGeneration() {
       const genre = document.getElementById('genre').value;
-      const outline = document.getElementById('story_outline').value;
-      const charactersInput = document.getElementById('characters_input').value;
-      const sceneCount = parseInt(document.getElementById('scene_count').value);
+      const direction = document.getElementById('story_direction').value;
       
-      if (!outline || !charactersInput) {
-        alert('请填写故事概要和角色设定');
+      if (!direction) {
+        alert('请输入故事方向');
         return;
       }
       
-      const logArea = document.getElementById('script_log');
-      logArea.innerHTML = '<div class="log-entry info">正在生成剧本...</div>';
+      currentStep = 2;
+      updateSteps();
       
-      // 模拟API调用（实际使用时替换为真实API）
-      try {
-        // 这里应该调用Agnes AI API生成剧本
-        // 暂时使用模拟数据
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        scriptData = {
-          title: "森林奇兵 第一集",
-          genre: genre,
-          scenes: Array.from({length: sceneCount}, (_, i) => ({
-            id: i + 1,
-            title: `场景 ${i + 1}`,
-            description: `这是第${i + 1}场戏的描述...`
-          }))
-        };
-        
-        logArea.innerHTML = `<div class="log-entry success">✅ 剧本生成完成！</div>
-                            <div class="log-entry info">📋 标题: ${scriptData.title}</div>
-                            <div class="log-entry info">🎭 类型: ${genre}</div>
-                            <div class="log-entry info">🎬 场景数: ${scriptData.scenes.length}</div>`;
-        
-        document.getElementById('script_result').style.display = 'block';
-      } catch (error) {
-        logArea.innerHTML = `<div class="log-entry error">❌ 生成失败: ${error.message}</div>`;
-      }
+      // 模拟AI生成剧本
+      await simulateScriptGeneration();
     }
     
-    // Step 2: 生成角色设定
-    function generateCharacters() {
+    // 模拟剧本生成
+    async function simulateScriptGeneration() {
+      const logArea = document.getElementById('script_log');
+      const progressBar = document.getElementById('script_progress');
+      logArea.innerHTML = '<div class="log-entry info">🤖 AI正在分析故事方向...</div>';
+      
+      // 模拟API调用
+      for (let i = 0; i <= 100; i += 10) {
+        progressBar.style.width = `${i}%`;
+        progressBar.textContent = `${i}%`;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      scriptData = {
+        title: "森林奇兵 第一集",
+        genre: "cartoon",
+        scenes: Array.from({length: 12}, (_, i) => ({
+          id: i + 1,
+          title: `场景 ${i + 1}`,
+          description: `这是第${i + 1}场戏的描述...`
+        }))
+      };
+      
+      logArea.innerHTML += `<div class="log-entry success">✅ 剧本生成完成！</div>
+                           <div class="log-entry info">📋 标题: ${scriptData.title}</div>
+                           <div class="log-entry info">🎭 类型: ${scriptData.genre}</div>
+                           <div class="log-entry info">🎬 场景数: ${scriptData.scenes.length}</div>`;
+      
+      document.getElementById('btn_confirm_script').style.display = 'inline-block';
+    }
+    
+    // 确认剧本
+    function confirmScript() {
+      currentStep = 3;
+      updateSteps();
+      simulateCharacterGeneration();
+    }
+    
+    // 模拟角色生成
+    async function simulateCharacterGeneration() {
       const grid = document.getElementById('character_grid');
+      const progressBar = document.getElementById('char_progress');
       grid.innerHTML = '';
       
       // 模拟生成角色
@@ -484,26 +490,37 @@
         card.innerHTML = `
           <img src="https://via.placeholder.com/300x200/5C3317/fff?text=${encodeURIComponent(name)}" alt="${name}">
           <h3>${name}</h3>
-          <p>角色设定图生成中...</p>
+          <p>角色设定生成中...</p>
         `;
         grid.appendChild(card);
       });
       
-      document.getElementById('btn_generate_chars').disabled = true;
+      // 模拟进度
+      for (let i = 0; i <= 100; i += 20) {
+        progressBar.style.width = `${i}%`;
+        progressBar.textContent = `${i}%`;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
       
-      // 模拟生成完成
-      setTimeout(() => {
-        document.getElementById('btn_next_chars').style.display = 'inline-block';
-        document.querySelectorAll('.character-card p').forEach(p => {
-          p.textContent = '✅ 角色设定已完成';
-          p.style.color = '#4CAF50';
-        });
-      }, 3000);
+      document.querySelectorAll('.character-card p').forEach(p => {
+        p.textContent = '✅ 角色设定已完成';
+        p.style.color = '#4CAF50';
+      });
+      
+      document.getElementById('btn_confirm_chars').style.display = 'inline-block';
     }
     
-    // Step 3: 生成场景图
-    function generateScenes() {
+    // 确认角色
+    function confirmCharacters() {
+      currentStep = 4;
+      updateSteps();
+      simulateSceneGeneration();
+    }
+    
+    // 模拟场景生成
+    async function simulateSceneGeneration() {
       const grid = document.getElementById('scene_grid');
+      const progressBar = document.getElementById('scene_progress');
       grid.innerHTML = '';
       
       if (!scriptData) return;
@@ -522,43 +539,63 @@
         grid.appendChild(card);
       });
       
-      document.getElementById('btn_generate_scenes').disabled = true;
-      
-      // 模拟生成完成
-      setTimeout(() => {
-        document.querySelectorAll('.scene-card .status').forEach(status => {
-          status.textContent = '✅ 完成';
-          status.className = 'status complete';
+      // 模拟进度
+      for (let i = 0; i <= 100; i += 10) {
+        progressBar.style.width = `${i}%`;
+        progressBar.textContent = `${i}%`;
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 更新场景状态
+        const statusElements = document.querySelectorAll('.scene-card .status');
+        const completedCount = Math.floor((i / 100) * statusElements.length);
+        statusElements.forEach((status, idx) => {
+          if (idx < completedCount) {
+            status.textContent = '✅ 完成';
+            status.className = 'status complete';
+          }
         });
-        document.getElementById('btn_next_scenes').style.display = 'inline-block';
-      }, 5000);
+      }
+      
+      document.getElementById('btn_confirm_scenes').style.display = 'inline-block';
     }
     
-    // Step 4: 生成视频
-    async function generateVideos() {
+    // 确认场景
+    function confirmScenes() {
+      currentStep = 5;
+      updateSteps();
+      simulateVideoGeneration();
+    }
+    
+    // 模拟视频生成
+    async function simulateVideoGeneration() {
       const logArea = document.getElementById('video_log');
       const progressBar = document.getElementById('video_progress');
-      logArea.innerHTML = '<div class="log-entry info">开始生成视频片段...</div>';
+      logArea.innerHTML = '<div class="log-entry info">🤖 AI开始生成视频片段...</div>';
       
-      // 模拟视频生成过程
+      // 模拟视频生成
       for (let i = 1; i <= 12; i++) {
         logArea.innerHTML += `<div class="log-entry info">生成场景 ${i} 的视频...</div>`;
         const progress = Math.round((i / 12) * 100);
         progressBar.style.width = `${progress}%`;
         progressBar.textContent = `${progress}%`;
         
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         logArea.innerHTML += `<div class="log-entry success">✅ 场景 ${i} 视频生成完成</div>`;
       }
       
-      document.getElementById('btn_next_videos').style.display = 'inline-block';
+      document.getElementById('btn_confirm_videos').style.display = 'inline-block';
     }
     
-    // Step 5: 拼接成片
-    async function compileVideo() {
+    // 确认视频
+    function confirmVideos() {
+      currentStep = 6;
+      updateSteps();
+      simulateCompilation();
+    }
+    
+    // 模拟拼接
+    async function simulateCompilation() {
       const progressBar = document.getElementById('compile_progress');
-      progressBar.style.width = '0%';
-      progressBar.textContent = '0%';
       
       // 模拟拼接过程
       for (let i = 0; i <= 100; i += 5) {
@@ -571,6 +608,7 @@
       document.querySelector('#final_video video source').src = 'videos/output.mp4';
     }
     
+    // 下载视频
     function downloadVideo() {
       const link = document.createElement('a');
       link.href = 'videos/output.mp4';
